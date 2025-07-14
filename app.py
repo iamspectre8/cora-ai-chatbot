@@ -1,22 +1,27 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import gradio as gr
-import torch
 
-# Load the model and tokenizer
-model_id = "mistralai/Mistral-7B-Instruct-v0.1"
+# Use Falcon 1B Instruct (small + public)
+model_id = "tiiuae/falcon-rw-1b"
+
+# Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
+model = AutoModelForCausalLM.from_pretrained(model_id)
 
-# Create the text generation pipeline
-chatbot = pipeline("text-generation", model=model, tokenizer=tokenizer)
+# Create text generation pipeline
+pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
+# Chat function
 def chat(message):
-    prompt = f"[INST] {message} [/INST]"
-    output = chatbot(prompt, max_new_tokens=200, do_sample=True, temperature=0.7)[0]["generated_text"]
-    return output.split("[/INST]")[-1].strip()
+    prompt = f"{message}"
+    response = pipe(prompt, max_new_tokens=200, do_sample=True, temperature=0.7)[0]["generated_text"]
+    return response.strip()
 
-# Gradio interface
-iface = gr.Interface(fn=chat, inputs="text", outputs="text", title="Cora: AI Chatbot")
-
-if __name__ == "__main__":
-    iface.launch()
+# Gradio UI
+gr.Interface(
+    fn=chat,
+    inputs="text",
+    outputs="text",
+    title="Cora: AI Chatbot",
+    description="A lightweight AI assistant powered by Falcon 1B Instruct. Ask anything!"
+).launch()
